@@ -18,8 +18,10 @@
 
           <div id="BpLine" :style="blueprints.length==0? 'padding-top:38px': ''">
 
-            <ol class="blueprint-line" :style="{minWidth: '100%', width: (150*blueprints.length + 1500) + 'px'}">
+            <ol style="text-align:left" class="blueprint-line" :style="{minWidth: '100%', width: (150*blueprints.length + 1500) + 'px'}">
               <li v-for="(item, index) in blueprints" :style="{ top: isMac() ? '22px' : '22px'}">
+                  
+                <!--<span style="position:absolute; top: 3px; left: 50%">style</span>-->
                 <span class="date"> {{item.createTime}}</span>
                 <a :class="['icon', currentBlueprint.uuid==item.uuid?'active': '']"  :uuid="item.uuid"> </a>
                 <span class="name"> {{item.name}} </span>
@@ -61,6 +63,7 @@
     padding: 0 30px;
     position: relative;
     width: 500px;
+    // width: 97%;
     margin: 20px auto;
     overflow: hidden;
     #BpLine {
@@ -94,7 +97,7 @@
       border: 1px solid #ddd;
       background: white;
       display: inline-block;
-      border-radius: 15px;
+      border-radius: 50%;
       text-align:center;
       font-size: 1.5em;
       line-height: 30px;
@@ -133,7 +136,7 @@
         width: 14px;
         height: 14px;
         border: 1px solid #6eaeec;
-        border-radius: 7px;
+        border-radius: 50%;
         position: absolute;
         top: -9px;
         cursor: pointer;
@@ -143,7 +146,7 @@
         background-color:#6eaeec;
         width: 18px;
         height: 18px;
-        border-radius: 9px;
+        border-radius: 50%;
         top: -11px;
         left: 64px;
       }
@@ -252,22 +255,22 @@
         disableIngress: false, // 一个蓝图里面只能存在一个ingress,
         blueprints: [
           {
-            name: 'kevin',
+            name: 'Kevin',
             createTime: '2017-08-09',
             uuid: 1
           },
           {
-            name: 'kevin',
+            name: 'Jack',
             createTime: '2017-08-09',
             uuid: 2
           },
           {
-            name: 'kevin',
+            name: 'Lucy',
             createTime: '2017-08-09',
             uuid: 3
           },
           {
-            name: 'kevin',
+            name: 'Lily',
             createTime: '2017-08-09',
             uuid: 4
           }
@@ -288,21 +291,11 @@
       })
     },
     watch: {
-      '$route'(val) {
-        this.$router.push({name: 'products', params: {team_id: val.params.team_id}})
-      },
-      'blueprints'() {
-        this.$nextTick(()=>{
-          this.setToRightBtn()
-        })
-      },
-      'currentBlueprint' (currentBp) {
-        let currentBpTemplate = currentBp.template,
-          toscaObj = yaml.safeLoad(currentBpTemplate)
-        if(currentBpTemplate==="") return
-        let ingressNodes = getServiceNodeByType('wise2c.nodes.Ingress', toscaObj)
-        this.disableIngress = ingressNodes.length!==0
-      }
+      // 'blueprints'() {
+      //   this.$nextTick(()=>{
+      //     this.setToRightBtn()
+      //   })
+      // }
     },
     methods: {
       isMac() {
@@ -399,10 +392,13 @@
       },
       setToRightBtn () {
         let containerWidth = $('#BpLine').width()
+        console.log(containerWidth, 'containerWidth')
         if(this.blueprints.length * 150 > containerWidth && this.workingStatus){
           this.disableRight = false
           this.pageSize = this.getPageSize(containerWidth)
+          console.log(this.pageSize, 'pageSize')
           this.pages = this.getPages(this.blueprints.length, this.pageSize)
+          console.log(this.pages, 'pageSize')          
         }
       }
     }
