@@ -16,18 +16,17 @@
 
           </div>
 
-          <div id="BpLine" :style="blueprints.length==0? 'padding-top:38px': ''">
+          <div id="BpLine" :style="blueprints.length==0? 'padding-top:38px': `transform: translateX(-${lineOffset}px)`">
 
-            <ol style="text-align:left" class="blueprint-line" :style="{minWidth: '100%', width: (150*blueprints.length + 1500) + 'px'}">
-              <li v-for="(item, index) in blueprints" :style="{ top: isMac() ? '22px' : '22px'}">
+            <ul style="text-align:left" class="blueprint-line" :style="{minWidth: '100%', width: (liWidth*blueprints.length + 1500) + 'px'}">
+              <li :style="{width: liWidth+'px', top: '18px'}" v-for="(item, index) in blueprints" >
                   
-                <!--<span style="position:absolute; top: 3px; left: 50%">style</span>-->
-                <span class="date"> {{item.createTime}}</span>
-                <a :class="['icon', currentBlueprint.uuid==item.uuid?'active': '']"  :uuid="item.uuid"> </a>
+                <span style="left:0; right: 0" class="date"> {{item.createTime}}</span>
+                <a style="left:0; right: 0; position:absolute;" :class="['icon', currentBlueprint.uuid==item.uuid?'active': '']" @click="activeOne(item)"  :uuid="item.uuid"> </a>
                 <span class="name"> {{item.name}} </span>
               </li>
 
-            </ol>
+            </ul>
           </div>
           <div :class='["move-tag-wrapper to-right", disableRight? "disable": ""]'>
             <a class="move-tag right" @click="toRight">
@@ -69,6 +68,7 @@
     #BpLine {
        padding-top: 20px;
        height: 80px;
+       transition: all ease-out .4s
     }
     .move-tag-wrapper {
       background-color: white ;
@@ -79,7 +79,7 @@
     }
     .to-left{
       left: 0;
-      top: 7px;
+      top: 2px;
       z-index: 1;
     }
     .to-right.disable, .to-left.disable {
@@ -88,7 +88,7 @@
     }
     .to-right {
       right: 0px;
-      top: 7px;
+      top: 2px;
       z-index: 1;
     }
     .move-tag {
@@ -121,12 +121,11 @@
       margin-bottom: 0;
     }
     .blueprint-line > li {
-      min-width: 100px;
+      // min-width: 100px;
       font-size: 12px;
       display: inline-block;
       position: relative;
       top: 24px;
-      min-width: 150px;
       text-align: center;
       border-top: 2px solid #6eaeec;
       .icon {
@@ -140,7 +139,10 @@
         position: absolute;
         top: -9px;
         cursor: pointer;
-        left: 66px;
+        right: 0; //绝对布局的水平居中处理
+        left: 0;  //绝对布局的水平居中处理
+        margin-left: auto; //绝对布局的水平居中处理
+        margin-right: auto; //绝对布局的水平居中处理
       }
       .icon.active {
         background-color:#6eaeec;
@@ -148,7 +150,7 @@
         height: 18px;
         border-radius: 50%;
         top: -11px;
-        left: 64px;
+        
       }
       .icon::before, icon.active::before {
         content: '';
@@ -171,78 +173,24 @@
         text-overflow: ellipsis;
         white-space: nowrap;
         overflow: hidden;
-        max-width: 150px;
-        width: 150px;
+  
+        max-width: 100%;
+        width: 100%;
         display: inline-block;
       }
     }
   }
 
-  .bluprint-info-wrapper {
-    /*display: flex;*/
-    margin-top: 20px;
-    overflow: auto;
-    padding: 0 20px;
-    padding-left: 50px;
-    div {
-      float: left;
-      width: 50%;
-    }
-    div:nth-child(n+3){
-      margin-top: 17px;
-    }
-  }
-  .blue-print {
-    margin-top: 20px;
-    & > div:last-child {
-      border: 1px solid #ddd;
-      padding: 15px;
-      min-height: 300px;
-      margin-top: 20px
-    }
-  }
 
-  .product-active {
-    color: #333;
-    background-color: #e6e6e6;
-    border-color: #adadad;
-  }
-  .bp-btn-group {
-    .btn-default:hover, .btn-default:active,  .btn-default:focus {
-      color: #333;
-      background-color: #e6e6e6;
-      border-color: #ccc;
-    }
-    i {
-      color: #999
-    }
-  }
-  .mb8 {
-    margin-bottom: 8px;
-  }
-  .ml8 {
-    margin-left: 8px;
-  }
-  div.op-wrapper .el-dropdown.bp-cus-drp {
-    a {
-      color: white;
-      &:hover {
-        text-decoration: none;
-      }
-    }
-    span {
-      font-size: 12px;
-    }
-  }
 </style>
 <script type="text/javascript">
   import $ from 'jquery'
   import anime from 'animejs'
-  // import moment from 'moment'
+  import { debounce } from 'lodash'
   export default {
     data () {
       return {
-        type: 'GRAPH',
+        liWidth: 300,// 每个li标签的长度
         lineOffsetUnit: 0,//偏移的基本单位
         lineOffset: 0,//偏移量
         disableLeft: true,
@@ -253,6 +201,7 @@
         pages: 0,//一共多少页
         currentPage: 1, //当前位于第几页,
         disableIngress: false, // 一个蓝图里面只能存在一个ingress,
+        offsetArr: [],
         blueprints: [
           {
             name: 'Kevin',
@@ -278,26 +227,18 @@
         currentBlueprint: { uuid: 1}
       }
     },
-    computed: {
-    },
-    vuex: {
-    },
-    components: {
-
-    },
     mounted() {
       this.$nextTick(()=>{
         this.setToRightBtn()
       })
     },
     watch: {
-      // 'blueprints'() {
-      //   this.$nextTick(()=>{
-      //     this.setToRightBtn()
-      //   })
-      // }
     },
     methods: {
+      activeOne (one) {
+        this.currentBlueprint = this.blueprints.find(item=>item.uuid === one.uuid )
+        console.log(this.currentBlueprint.uuid, 'dddddddddddd')
+      },
       isMac() {
         return window.navigator.platform.includes('Mac')
       },
@@ -319,7 +260,7 @@
               //如果是第一页  则不能向左
               this.disableLeft = this.currentPage=== 1
               this.lineOffset = this.lineOffset - this.lineOffsetUnit
-              this.animateAction(this.lineOffset)
+              // this.animateAction(this.lineOffset)
             }
             //更新总的页码数
             this.pages = this.getPages(oldLength-1, this.pageSize)
@@ -351,7 +292,7 @@
           this.disableLeft = true
         }
         this.lineOffset = this.lineOffset - this.lineOffsetUnit
-        this.animateAction(this.lineOffset)
+        // this.animateAction(this.lineOffset)
       },
       toRight () {
         if(this.disableRight) return
@@ -359,7 +300,7 @@
         this.currentPage ++  //页码+1
         this.lineOffsetUnit = this.getOffsetUit()
         this.lineOffset = this.lineOffset + this.lineOffsetUnit
-        this.animateAction(this.lineOffset)
+        // this.animateAction(this.lineOffset)
         this.disableToRightWhenLoacatedLastPage()
       },
       //如果当前页是最后的一页，则向右应该被禁止
@@ -369,8 +310,8 @@
       },
       getOffsetUit () {
         let visionalWidth = $('.blueprint-line-wrapper').width(), //可视范围的宽度
-          remain = visionalWidth % 150 //能否整除一个单位
-        return (remain< 150 && remain> 0) ? parseInt(visionalWidth/150) * 150 : visionalWidth
+          remain = visionalWidth % this.liWidth //能否整除一个单位
+        return (remain< this.liWidth && remain> 0) ? parseInt(visionalWidth/this.liWidth) * this.liWidth : visionalWidth
       },
       switchDisplay (type) {
         this.type = type
@@ -381,11 +322,23 @@
           translateX: `-${offset}px`,
           duration: 1000,
           loop: false,
-          easing: 'easeOutQuart'
+          easing: 'easeOutQuart',
+          complete: function(animeObj) {
+            console.log(animeObj, '这一个完了。。。。。。。。。。。。')
+          }
         })
       },
+      animateActionNew: debounce(function(){
+        anime({
+          targets: '#BpLine',
+          translateX: `-${this.lineOffset}px`,
+          duration: 1000,
+          loop: false,
+          easing: 'easeOutQuart'
+        })
+      }, 100),
       getPageSize (containerWidth) {
-        return parseInt(containerWidth/150)
+        return parseInt(containerWidth/this.liWidth)
       },
       getPages (length, size) {
         return length%size === 0 ? length/size : parseInt(length/size) + 1
@@ -393,7 +346,7 @@
       setToRightBtn () {
         let containerWidth = $('#BpLine').width()
         console.log(containerWidth, 'containerWidth')
-        if(this.blueprints.length * 150 > containerWidth && this.workingStatus){
+        if(this.blueprints.length * this.liWidth > containerWidth && this.workingStatus){
           this.disableRight = false
           this.pageSize = this.getPageSize(containerWidth)
           console.log(this.pageSize, 'pageSize')

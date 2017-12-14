@@ -4,6 +4,8 @@ import Vue from 'vue'
 import App from './App'
 import router from './router'
 import 'font-awesome/css/font-awesome.min.css'
+// import 'minireset.css'
+import 'normalize.css'
 Vue.config.productionTip = false
 
 /* eslint-disable no-new */
