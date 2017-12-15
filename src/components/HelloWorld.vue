@@ -1,5 +1,5 @@
 <template>
-  <div class="product-version-container">
+  <div class="container">
 
     <div class="version-no">
       <div class="common-title">
@@ -46,17 +46,10 @@
   </div>
 </template>
 <style lang="scss">
-  .topo-wrapper {
-    border-radius: 5px;
-    padding: 0;
-  }
-  .product-version-container {
+  .container {
     min-height: 200px;
     padding: 5px 10px;
     margin-top: 10px;
-    .bp-edit-icon {
-      color: #999;
-    }
   }
   .blueprint-line-wrapper {
     padding: 0 30px;
@@ -119,6 +112,7 @@
       padding-left: 0;
       font-size: 0;
       margin-bottom: 0;
+      height: 18px;      
     }
     .blueprint-line > li {
       // min-width: 100px;
@@ -190,7 +184,7 @@
   export default {
     data () {
       return {
-        liWidth: 300,// 每个li标签的长度
+        liWidth: 200,// 每个li标签的长度
         lineOffsetUnit: 0,//偏移的基本单位
         lineOffset: 0,//偏移量
         disableLeft: true,
@@ -200,7 +194,6 @@
         pageSize: 0,//每页的条数
         pages: 0,//一共多少页
         currentPage: 1, //当前位于第几页,
-        disableIngress: false, // 一个蓝图里面只能存在一个ingress,
         offsetArr: [],
         blueprints: [
           {
@@ -316,6 +309,7 @@
       switchDisplay (type) {
         this.type = type
       },
+      //连续时间内同时点击两次闪屏，所以直接改成修改元素的样式，这个方法暂时没有用到
       animateAction (offset) {
         anime({
           targets: '#BpLine',
@@ -328,15 +322,6 @@
           }
         })
       },
-      animateActionNew: debounce(function(){
-        anime({
-          targets: '#BpLine',
-          translateX: `-${this.lineOffset}px`,
-          duration: 1000,
-          loop: false,
-          easing: 'easeOutQuart'
-        })
-      }, 100),
       getPageSize (containerWidth) {
         return parseInt(containerWidth/this.liWidth)
       },
