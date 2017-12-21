@@ -3,12 +3,13 @@
 
     <div class="version-no">
       <div class="common-title">
-        common-title
-
+        <button @click="removeCurrentNode">
+          delete currentItem
+        </button>
       </div>
-      <div class="blueprint-line-wrapper" >
+      <div class="time-line-wrapper" >
 
-        <template v-if="blueprints.length!==0">
+        <template v-if="allNodes.length!==0">
           <div :class='["move-tag-wrapper to-left", disableLeft? "disable": ""]'>
             <a class="move-tag left" @click="toLeft">
               <i class="fa fa-angle-double-left"> </i>
@@ -16,13 +17,13 @@
 
           </div>
 
-          <div id="BpLine" :style="blueprints.length==0? 'padding-top:38px': `transform: translateX(-${lineOffset}px)`">
+          <div id="UlWrapper" :style="allNodes.length==0? 'padding-top:38px': `transform: translateX(-${lineOffset}px)`">
 
-            <ul style="text-align:left" class="blueprint-line" :style="{minWidth: '100%', width: (liWidth*blueprints.length + 1500) + 'px'}">
-              <li :style="{width: liWidth+'px', top: '18px'}" v-for="(item, index) in blueprints" >
+            <ul style="text-align:left" class="blueprint-line" :style="{minWidth: '100%', width: (liWidth*allNodes.length + 1500) + 'px'}">
+              <li :style="{width: liWidth+'px', top: '18px'}" v-for="(item, index) in allNodes" >
                   
                 <span style="left:0; right: 0" class="date"> {{item.createTime}}</span>
-                <a style="left:0; right: 0; position:absolute;" :class="['icon', currentBlueprint.uuid==item.uuid?'active': '']" @click="activeOne(item)"  :uuid="item.uuid"> </a>
+                <a style="left:0; right: 0; position:absolute;" :class="['icon', currentNode.uuid==item.uuid?'active': '']" @click="activeOne(item)"  :uuid="item.uuid"> </a>
                 <span class="name"> {{item.name}} </span>
               </li>
 
@@ -51,14 +52,14 @@
     padding: 5px 10px;
     margin-top: 10px;
   }
-  .blueprint-line-wrapper {
+  .time-line-wrapper {
     padding: 0 30px;
     position: relative;
     width: 500px;
     // width: 97%;
     margin: 20px auto;
     overflow: hidden;
-    #BpLine {
+    #UlWrapper {
        padding-top: 20px;
        height: 80px;
        transition: all ease-out .4s
@@ -179,7 +180,6 @@
 </style>
 <script type="text/javascript">
   import $ from 'jquery'
-  import anime from 'animejs'
   import { debounce } from 'lodash'
   export default {
     data () {
@@ -195,7 +195,7 @@
         pages: 0,//一共多少页
         currentPage: 1, //当前位于第几页,
         offsetArr: [],
-        blueprints: [
+        allNodes: [
           {
             name: 'Kevin',
             createTime: '2017-08-09',
@@ -217,7 +217,7 @@
             uuid: 4
           }
         ],
-        currentBlueprint: { uuid: 1}
+        currentNode: { uuid: 1}
       }
     },
     mounted() {
@@ -229,53 +229,35 @@
     },
     methods: {
       activeOne (one) {
-        this.currentBlueprint = this.blueprints.find(item=>item.uuid === one.uuid )
-        console.log(this.currentBlueprint.uuid, 'dddddddddddd')
+        this.currentNode = this.allNodes.find(item=>item.uuid === one.uuid )
+        console.log(this.currentNode.uuid, 'dddddddddddd')
       },
-      isMac() {
-        return window.navigator.platform.includes('Mac')
-      },
-      goCertainService (routeName) {
-        this.$router.push(
-          {name: routeName , params: { team_id: this.teamId, product_id: this.productId, blueprint_id: this.currentBlueprint.uuid }}
-        )
-      },
-      removeCurrentBp (blueprint) {
-        promptOnDelete(this, `若确认删除该蓝图 ${blueprint.name} `, () => {
-          const {team_id} = this.$route.params
-          this.workingStatus = false
-          let oldLength = this.blueprints.length,
-            deleteItemIndex = this.blueprints.findIndex(item=>item.name===blueprint.name) + 1
-          this.deleteBluePrint(team_id, blueprint.uuid, ()=>{
-            //删除的是最后一页的唯一一个元素
-            if( deleteItemIndex%this.pageSize===1 && deleteItemIndex===oldLength ) {
-              this.currentPage --
-              //如果是第一页  则不能向左
-              this.disableLeft = this.currentPage=== 1
-              this.lineOffset = this.lineOffset - this.lineOffsetUnit
-              // this.animateAction(this.lineOffset)
-            }
-            //更新总的页码数
-            this.pages = this.getPages(oldLength-1, this.pageSize)
-            //如果删掉了一个,当前的总页码 和 currentPage一样 则也不能向右
-            this.disableToRightWhenLoacatedLastPage()
-            //如果总的只有一页，则左右都不能移动
-            if(this.pages ===1) {
-              this.disableRight = true
-              this.disableLeft = true
-            }
-          })
-        })
-      },
-      activeBp (blueprint) {
-        this.setCurrentBluePrint(blueprint)
-      },
-      editCurrentBp (blueprint) {
-        this.$root.eventHub.$emit('EDIT_BP', blueprint)
-      },
-      addBp () {
-        this.$root.eventHub.$emit('ADD_BP')
-        this.workingStatus = true
+      removeCurrentNode () {
+        let oldLength = this.allNodes.length        
+        let index = this.allNodes.findIndex(item=>item.uuid === this.currentNode.uuid)
+        console.log(index, 'indexxxx')
+        this.allNodes.splice(index, 1)
+        this.currentNode = this.allNodes[index++]
+        this.workingStatus = false
+        let  deleteItemIndex = index + 1
+        //删除的是最后一页的唯一一个元素
+        if( deleteItemIndex%this.pageSize===1 && deleteItemIndex===oldLength ) {
+          this.currentPage --
+          //如果是第一页  则不能向左
+          this.disableLeft = this.currentPage=== 1
+          this.lineOffset = this.lineOffset - this.lineOffsetUnit
+          // this.animateAction(this.lineOffset)
+        }
+        //更新总的页码数
+        this.pages = this.getPages(oldLength-1, this.pageSize)
+        console.log(this.pages, '现在的总页数', oldLength, this.pageSize)
+        //如果删掉了一个,当前的总页码 和 currentPage一样 则也不能向右
+        this.disableToRightWhenLoacatedLastPage()
+        //如果总的只有一页，则左右都不能移动
+        if(this.pages ===1) {
+          this.disableRight = true
+          this.disableLeft = true
+        }
       },
       toLeft () {
         if(this.disableLeft) return
@@ -285,7 +267,6 @@
           this.disableLeft = true
         }
         this.lineOffset = this.lineOffset - this.lineOffsetUnit
-        // this.animateAction(this.lineOffset)
       },
       toRight () {
         if(this.disableRight) return
@@ -293,7 +274,6 @@
         this.currentPage ++  //页码+1
         this.lineOffsetUnit = this.getOffsetUit()
         this.lineOffset = this.lineOffset + this.lineOffsetUnit
-        // this.animateAction(this.lineOffset)
         this.disableToRightWhenLoacatedLastPage()
       },
       //如果当前页是最后的一页，则向右应该被禁止
@@ -302,25 +282,9 @@
           this.disableRight = true
       },
       getOffsetUit () {
-        let visionalWidth = $('.blueprint-line-wrapper').width(), //可视范围的宽度
+        let visionalWidth = $('.time-line-wrapper').width(), //可视范围的宽度
           remain = visionalWidth % this.liWidth //能否整除一个单位
         return (remain< this.liWidth && remain> 0) ? parseInt(visionalWidth/this.liWidth) * this.liWidth : visionalWidth
-      },
-      switchDisplay (type) {
-        this.type = type
-      },
-      //连续时间内同时点击两次闪屏，所以直接改成修改元素的样式，这个方法暂时没有用到
-      animateAction (offset) {
-        anime({
-          targets: '#BpLine',
-          translateX: `-${offset}px`,
-          duration: 1000,
-          loop: false,
-          easing: 'easeOutQuart',
-          complete: function(animeObj) {
-            console.log(animeObj, '这一个完了。。。。。。。。。。。。')
-          }
-        })
       },
       getPageSize (containerWidth) {
         return parseInt(containerWidth/this.liWidth)
@@ -329,13 +293,13 @@
         return length%size === 0 ? length/size : parseInt(length/size) + 1
       },
       setToRightBtn () {
-        let containerWidth = $('#BpLine').width()
+        let containerWidth = $('#UlWrapper').width()
         console.log(containerWidth, 'containerWidth')
-        if(this.blueprints.length * this.liWidth > containerWidth && this.workingStatus){
+        if(this.allNodes.length * this.liWidth > containerWidth && this.workingStatus){
           this.disableRight = false
           this.pageSize = this.getPageSize(containerWidth)
           console.log(this.pageSize, 'pageSize')
-          this.pages = this.getPages(this.blueprints.length, this.pageSize)
+          this.pages = this.getPages(this.allNodes.length, this.pageSize)
           console.log(this.pages, 'pageSize')          
         }
       }
